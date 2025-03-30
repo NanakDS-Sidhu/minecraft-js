@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { SimplexNoise } from 'three/examples/jsm/Addons.js';
 import { RNG } from './rng';
 import { blocks } from './blocks';
+import { resources } from './blocks';
 
 const  geometry =new THREE.BoxGeometry();
 const  material= new THREE.MeshLambertMaterial();
@@ -30,8 +31,10 @@ export class World extends THREE.Group {
     }
 
     generate(){
+        const rng = new RNG(this.params.seed);
         this.initializeTerrain();
-        this.generateTerrain();
+        this.generateResources(rng);
+        this.generateTerrain(rng);
         this.generateMeshes();
     }
 
@@ -56,8 +59,26 @@ export class World extends THREE.Group {
         }
     }
 
-    generateTerrain(){
-        const rng = new RNG(this.params.seed);
+    generateResources(rng){
+        const simplex= new SimplexNoise(rng);
+        resources.forEach(resource=>{
+            for(let x=0 ; x < this.size.width ; x++){
+                for(let y=0 ; y < this.size.height ; y++){
+                    for(let z=0 ; z < this.size.width ; z++){
+                        const value= simplex.noise3d(
+                            x / resource.scale.x , 
+                            y / resource.scale.y ,
+                            z / resource.scale.z);
+                        if (value > resource.scarcity){
+                            this.setBlockId(x , y , z ,resource.id)
+                        }
+                    }
+                }
+            }})
+        }
+    
+
+    generateTerrain(rng){
         const simplex= new SimplexNoise(rng);
         for(let x=0; x<this.size.width; x++){
             for(let z=0; z<this.size.width; z++){
@@ -69,11 +90,11 @@ export class World extends THREE.Group {
                 let height = Math.floor(this.size.height * scaledNoise);
                 height =Math.max(0, Math.min(height,this.size.height - 1));
                 for(let y=0; y < this.size.height; y++){
-                    if (y < height){
+                    if (y < height && this.getBlock(x,y,z).id === blocks.empty.id){
                         this.setBlockId(x,y,z, blocks.dirt.id)
                     }else if(y === height){
                         this.setBlockId(x,y,z, blocks.grass.id)
-                    }else{
+                    }else if(y> height){
                         this.setBlockId(x,y,z, blocks.empty.id)
                     }
             }

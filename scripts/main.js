@@ -29,7 +29,7 @@ scene.add(world)
 
 function setupLights(){
     const light1=new THREE.DirectionalLight()
-    light1.position.set(1,1,1);
+    light1.position.set(5,1,1);
     scene.add(light1)
 
     const light2=new THREE.DirectionalLight()
